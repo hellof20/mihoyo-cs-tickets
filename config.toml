@@ -1,0 +1,13 @@
+[main]
+dt = "2025-06-10"
+
+[bigquery]
+project_id = "speedy-victory-336109"
+dataset_id = "nap_tickets"
+text_embedding_model = "gemini-embedding-001"
+summary_model = "gemini-25-pro-preview-05-06"
+raw_table_name = "raw_data_view"
+result_table_name = "result"
+
+[clustering]
+hdbscan_min_samples = 3
