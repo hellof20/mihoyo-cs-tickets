@@ -1,13 +1,20 @@
-[main]
-dt = "2025-06-10"
-
 [bigquery]
 project_id = "speedy-victory-336109"
 dataset_id = "nap_tickets"
 text_embedding_model = "gemini-embedding-001"
 summary_model = "gemini-25-pro-preview-05-06"
-raw_table_name = "raw_data_view"
+
+raw_table_name = "raw_data_1"
+raw_data_view = "raw_view"
+summary_table_name = "issue_summary"
+embedding_table_name = "issue_embedding"
+cluster_table_name = "cluster"
 result_table_name = "result"
+faq_table_name = "issue_faq"
 
 [clustering]
-hdbscan_min_samples = 3
+hdbscan_min_samples = 5
+
+[gcs]
+source_bucket = "pwm-lowa"
+source_csv_path = "NAP_tickets.csv"
