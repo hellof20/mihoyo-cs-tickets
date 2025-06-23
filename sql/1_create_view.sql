@@ -24,7 +24,6 @@ CREATE OR REPLACE VIEW `{project_id}.{dataset_id}.{raw_data_view}` (
     `问题二级` AS issue_level_2,
     `问题三级` AS issue_level_3,
     `服务器` AS server,
-    -- 修正之处：直接将 TIMESTAMP 类型的 '创建时间' 转换为 DATE 类型
     CAST(`创建时间` AS DATE) AS dt
   FROM
     `{project_id}.{dataset_id}.{raw_table_name}`

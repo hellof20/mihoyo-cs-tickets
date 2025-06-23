@@ -1,16 +1,22 @@
-[bigquery]
+[app]
 project_id = "speedy-victory-336109"
+
+[pubsub]
+subscription_name = "cs-issue-sub"
+max_messages = 1
+
+[bigquery]
 dataset_id = "nap_tickets"
 text_embedding_model = "gemini-embedding-001"
 summary_model = "gemini-25-pro-preview-05-06"
 
-raw_table_name = "raw_data_1"
+raw_table_name = "raw_data"
 raw_data_view = "raw_view"
 summary_table_name = "issue_summary"
 embedding_table_name = "issue_embedding"
-cluster_table_name = "cluster"
-result_table_name = "result"
+cluster_table_name = "issue_cluster"
 faq_table_name = "issue_faq"
+result_table_name = "issue_result"
 
 [clustering]
 hdbscan_min_samples = 5
