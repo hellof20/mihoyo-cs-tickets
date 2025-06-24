@@ -1,5 +1,13 @@
-CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.{embedding_table}`
-AS
+CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{embedding_table}`
+(
+  ticket_id INT64,
+  issue_embedding ARRAY<FLOAT64>,
+  ticket_language STRING,
+  business STRING,
+  dt DATE
+) PARTITION BY dt;
+
+INSERT INTO `{project_id}.{dataset_id}.{embedding_table}`
 SELECT
     ticket_id,
     ml_generate_embedding_result AS issue_embedding,

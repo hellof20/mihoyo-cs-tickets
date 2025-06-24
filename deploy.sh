@@ -3,6 +3,7 @@ bq show --connection speedy-victory-336109.us-central1.gemini-connection
 gcloud projects add-iam-policy-binding speedy-victory-336109 --member='serviceAccount:bqcx-279432852451-yesq@gcp-sa-bigquery-condel.iam.gserviceaccount.com' --role='roles/aiplatform.user' --condition=None
 
 CREATE OR REPLACE MODEL `nap_tickets.gemini-25-pro-preview-05-06` REMOTE WITH CONNECTION `us-central1.gemini-connection` OPTIONS(ENDPOINT = 'gemini-2.5-pro-preview-05-06');
+CREATE OR REPLACE MODEL `nap_tickets.gemini-25-flash` REMOTE WITH CONNECTION `us-central1.gemini-connection` OPTIONS(ENDPOINT = 'gemini-2.5-flash');
 CREATE OR REPLACE MODEL `nap_tickets.gemini-embedding-001` REMOTE WITH CONNECTION `us-central1.gemini-connection` OPTIONS(ENDPOINT = 'gemini-embedding-001');
 
 

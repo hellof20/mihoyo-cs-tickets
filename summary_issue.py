@@ -55,7 +55,7 @@ def cluster_issues(bq: BigQueryHandler, dates_to_process: list[str]):
         print(f"--- Processing clusters for date: {dt_param} ---")
 
         # 获取该日期的数据
-        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt = '{dt_param}'"
+        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt = {dt_param}"
         df = bq.read_gbq_to_dataframe(query)
 
         if df is None or df.empty:
@@ -129,23 +129,23 @@ def run_pipeline():
             bq_handler.execute_sql(sql)
 
             # 从加载的数据中获取所有唯一的日期，作为本次运行的基准
-            print("--- Determining dates to process from the raw data ---")
-            try:
-                dt_query = f"SELECT DISTINCT dt FROM `{PROJECT_ID}.{DATASET_ID}.{bq_config['raw_data_view']}` ORDER BY dt"
-                dt_df = bq_handler.read_gbq_to_dataframe(dt_query)
-                if dt_df is None or dt_df.empty:
-                    print("No dates found in the source data. Exiting pipeline.")
-                    return
+            # print("--- Determining dates to process from the raw data ---")
+            # try:
+            #     dt_query = f"SELECT DISTINCT dt FROM `{PROJECT_ID}.{DATASET_ID}.{bq_config['raw_data_view']}` ORDER BY dt"
+            #     dt_df = bq_handler.read_gbq_to_dataframe(dt_query)
+            #     if dt_df is None or dt_df.empty:
+            #         print("No dates found in the source data. Exiting pipeline.")
+            #         return
 
-                # 将日期对象转换为 'YYYY-MM-DD' 格式的字符串列表
-                dates_to_process = sorted([
-                    dt.strftime('%Y-%m-%d') if hasattr(dt, 'strftime') else str(dt)
-                    for dt in dt_df['dt']
-                ])
-                print(f"Pipeline will run for the following {len(dates_to_process)} dates: {dates_to_process}")
-            except Exception as e:
-                print(f"Failed to query distinct dates from raw table. Error: {e}")
-                raise
+            #     # 将日期对象转换为 'YYYY-MM-DD' 格式的字符串列表
+            #     dates_to_process = sorted([
+            #         dt.strftime('%Y-%m-%d') if hasattr(dt, 'strftime') else str(dt)
+            #         for dt in dt_df['dt']
+            #     ])
+            #     print(f"Pipeline will run for the following {len(dates_to_process)} dates: {dates_to_process}")
+            # except Exception as e:
+            #     print(f"Failed to query distinct dates from raw table. Error: {e}")
+            #     raise
 
             # 摘要和情感分析
             print("--- Starting: Summarizing issues ---")
@@ -170,20 +170,20 @@ def run_pipeline():
             bq_handler.execute_sql(sql)
             
             # 聚类
-            print("--- Starting: CLustering tickets ---")
-            cluster_issues(bq_handler, dates_to_process)
+            # print("--- Starting: CLustering tickets ---")
+            # cluster_issues(bq_handler, dates_to_process)
             
-            # 生成 FAQ
-            print("--- Starting: Generating FAQ from clusters ---")
-            sql = get_template("sql/4_generate_faq.sql").format(
-                project_id=PROJECT_ID,
-                dataset_id=DATASET_ID,
-                faq_table=bq_config['faq_table_name'],
-                summary_model=bq_config['summary_model'],
-                cluster_table=bq_config['cluster_table_name'],
-                summary_table=bq_config['summary_table_name'],
-            )
-            bq_handler.execute_sql(sql)
+            # # 生成 FAQ
+            # print("--- Starting: Generating FAQ from clusters ---")
+            # sql = get_template("sql/4_generate_faq.sql").format(
+            #     project_id=PROJECT_ID,
+            #     dataset_id=DATASET_ID,
+            #     faq_table=bq_config['faq_table_name'],
+            #     summary_model=bq_config['summary_model'],
+            #     cluster_table=bq_config['cluster_table_name'],
+            #     summary_table=bq_config['summary_table_name'],
+            # )
+            # bq_handler.execute_sql(sql)
         
         print(f"======== Pipeline Completed Successfully ========")
     # 合并最终结果

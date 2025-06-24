@@ -8,7 +8,7 @@ max_messages = 1
 [bigquery]
 dataset_id = "nap_tickets"
 text_embedding_model = "gemini-embedding-001"
-summary_model = "gemini-25-pro-preview-05-06"
+summary_model = "gemini-25-flash"
 
 raw_table_name = "raw_data"
 raw_data_view = "raw_view"

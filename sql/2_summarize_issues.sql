@@ -1,4 +1,29 @@
-CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.{summary_table}` AS (
+CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{summary_table}`
+(
+  generated_text STRING,
+  ml_generate_text_llm_result STRING,
+  ml_generate_text_rai_result JSON,
+  ml_generate_text_status STRING,
+  ticket_id INT64,
+  created_at TIMESTAMP,
+  ticket_language STRING,
+  gamebiz STRING,
+  platform STRING,
+  player_issue_description STRING,
+  business STRING,
+  sub_business STRING,
+  issue_level_2 STRING,
+  issue_level_3 STRING,
+  server STRING,
+  dt DATE,
+  prompt STRING,
+  parsed_json JSON,
+  user_issue STRING,
+  unspecified_issue STRING,
+  user_sentiment STRING
+) PARTITION BY dt;
+
+INSERT INTO `{project_id}.{dataset_id}.{summary_table}`
 WITH gemini_extract AS (
     SELECT
         TRIM(REGEXP_REPLACE(ml_generate_text_llm_result, r'^```json|```$', '')) AS generated_text,
@@ -40,4 +65,4 @@ SELECT
     JSON_VALUE(parsed_json, '$.user_sentiment') AS user_sentiment
 FROM
     gemini_extract,
-    UNNEST([SAFE.PARSE_JSON(generated_text)]) AS parsed_json);
+    UNNEST([SAFE.PARSE_JSON(generated_text)]) AS parsed_json;

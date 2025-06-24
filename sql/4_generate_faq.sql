@@ -1,9 +1,20 @@
-CREATE OR REPLACE TABLE `{project_id}.{dataset_id}.{faq_table}`
-AS
+CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{faq_table}`
+(
+  task_id STRING,
+  cluster_id STRING,
+  business STRING,
+  num_tickets INT64,
+  generated_text STRING,
+  prompt STRING,
+  ml_generate_text_llm_result STRING,
+  parsed_json JSON,
+  summarized STRING
+) CLUSTER BY task_id;
+
+INSERT INTO `{project_id}.{dataset_id}.{faq_table}`
 WITH summary AS (
     SELECT
-    cluster_id, dt, business,
-    num_tickets,
+    id,cluster_id, business,num_tickets,
     TRIM(REGEXP_REPLACE(ml_generate_text_llm_result, r'^```json|```$', '')) AS generated_text,
     prompt,
     ml_generate_text_llm_result
@@ -11,9 +22,7 @@ WITH summary AS (
     ML.GENERATE_TEXT( MODEL `{dataset_id}.{summary_model}`,
         (
         SELECT
-        t2.dt as dt, business,
-        cluster_id,
-        count(*) num_tickets,
+        t1.id, business,cluster_id,count(*) num_tickets,
         CONCAT(
             'please analyze the following group of issues and then summarize them',
             '<output_format>',
@@ -23,13 +32,13 @@ WITH summary AS (
             STRING_AGG(CONCAT('<issue>', user_issue, '</issue>'), "")
         ) AS prompt
         FROM
-        `{project_id}.{dataset_id}.{cluster_table}` t1
+        `{project_id}.{dataset_id}.{cluster_table}` t1  
         JOIN
         `{project_id}.{dataset_id}.{summary_table}` t2
         ON
         t1.ticket_id = t2.ticket_id
-        WHERE cluster_id NOT LIKE '-1|%'
-        GROUP BY cluster_id, business, t2.dt),
+        WHERE cluster_id NOT LIKE '-1|%' and t1.id = '{task_id}'
+        GROUP BY cluster_id, business, t1.id),
         STRUCT(TRUE AS flatten_json_output, 1.0 AS temperature, 8192 AS max_output_tokens))
 )
 SELECT
