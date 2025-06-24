@@ -1,5 +1,5 @@
 import numpy as np
-import uuid
+from datetime import datetime # 导入 datetime
 import toml
 import hdbscan
 from pathlib import Path
@@ -77,7 +77,7 @@ def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang, task_id):
 
     print("--- Finished: Clustering issues ---")
 
-async def run_pipeline(startDate, endDate, lang, task_id):
+def run_pipeline(startDate, endDate, lang, task_id):
     """主函数，按顺序运行整个数据处理流程"""
     print(f"======== Starting Data Processing Pipeline ========")
     bq_handler = BigQueryHandler(config_path="config.toml")
@@ -103,9 +103,10 @@ async def run_pipeline(startDate, endDate, lang, task_id):
         print(f"======== Pipeline Completed Successfully ========")
         
         # 更新任务状态为 'success'
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         update_status_query = f"""
             UPDATE `{PROJECT_ID}.{DATASET_ID}.{TASK_STATUS_TABLE}`
-            SET status = 'success', updated_at = FORMAT_TIMESTAMP('%Y-%m-%d %H:%M:%S', CURRENT_TIMESTAMP())
+            SET status = 'success', updated_at = '{time}'
             WHERE task_id = '{task_id}'
         """
         bq_handler.execute_sql(update_status_query)
@@ -123,10 +124,3 @@ async def run_pipeline(startDate, endDate, lang, task_id):
         bq_handler.execute_sql(update_status_query)
         print(f"Task {task_id} status updated to 'failed'. Error: {e}")
 
-
-# if __name__ == "__main__":
-#     startDate = "2025-06-10"
-#     endDate = "2025-06-11"
-#     # lang = "English(en-us)"
-#     lang = "西班牙语(es-es)"
-#     run_pipeline(startDate, endDate, lang)

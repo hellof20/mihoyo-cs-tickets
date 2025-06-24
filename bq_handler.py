@@ -128,3 +128,47 @@ class BigQueryHandler:
             print(f"An error occurred while loading data from GCS: {e}")
             raise
 
+    def get_task_status(self, table_id: str, task_id: str) -> pd.DataFrame:
+        """
+        根据 task_id 从 BigQuery 查询任务状态。
+        """
+        full_table_id = f"{self.project_id}.{self.dataset_id}.{table_id}"
+        query = f"""SELECT * FROM `{full_table_id}` WHERE task_id = '{task_id}'"""
+        print(f"Fetching status for task_id: {task_id} from {full_table_id}...")
+        try:
+            df = self.read_gbq_to_dataframe(query)
+            if not df.empty:
+                print(f"Found status for task_id {task_id}.")
+            else:
+                print(f"No status found for task_id {task_id}.")
+            return df
+        except Exception as e:
+            print(f"Error fetching task status for {task_id}: {e}")
+            raise
+
+    def list_tasks(self, table_id: str, limit: int = 100, offset: int = 0, lang: str = None, status: str = None) -> pd.DataFrame:
+        """
+        从 BigQuery 列出所有任务或根据条件筛选任务。
+        """
+        full_table_id = f"{self.project_id}.{self.dataset_id}.{table_id}"
+        query = f"""SELECT * FROM `{full_table_id}`"""
+        conditions = []
+        if lang:
+            conditions.append(f"lang = '{lang}'")
+        if status:
+            conditions.append(f"status = '{status}'")
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        query += f" ORDER BY created_at DESC LIMIT {limit} OFFSET {offset}"
+        
+        print(f"Listing tasks from {full_table_id} with limit {limit}, offset {offset}, lang {lang}, status {status}...")
+        try:
+            df = self.read_gbq_to_dataframe(query)
+            print(f"Successfully listed {len(df)} tasks.")
+            return df
+        except Exception as e:
+            print(f"Error listing tasks: {e}")
+            raise
+
