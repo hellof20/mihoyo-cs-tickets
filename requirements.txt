@@ -7,3 +7,5 @@ hdbscan
 toml
 google-cloud-pubsub
 scikit-learn==1.5.2
+fastapi
+uvicorn

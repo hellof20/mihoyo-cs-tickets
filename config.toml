@@ -17,6 +17,7 @@ embedding_table_name = "issue_embedding"
 cluster_table_name = "issue_cluster"
 faq_table_name = "issue_faq"
 result_table_name = "issue_result"
+task_status_table_name = "task_status"
 
 [clustering]
 hdbscan_min_samples = 5

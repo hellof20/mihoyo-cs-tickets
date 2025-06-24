@@ -27,9 +27,10 @@ clustering_config = config['clustering']
 HDBDSCAN_MIN_SAMPLES = clustering_config['hdbscan_min_samples']
 PROJECT_ID = app_config['project_id']
 DATASET_ID = bq_config['dataset_id']
+TASK_STATUS_TABLE = bq_config['task_status_table_name']
 
 # --- 函数定义 ---
-def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang):
+def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang, task_id):
     print(f"--- Processing clusters for date range: {startDate} to {endDate} ---")
     embedding_table_id = f"{PROJECT_ID}.{DATASET_ID}.{bq_config['embedding_table_name']}"
     cluster_table_name = bq_config['cluster_table_name']
@@ -61,7 +62,7 @@ def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang):
     df_to_upload['cluster_id'] = clusters
 
     # 为 cluster_id 添加UUID后缀，确保每次运行的簇ID唯一
-    uuid_str = str(uuid.uuid4())
+    uuid_str = task_id
     df_to_upload['cluster_id'] = df_to_upload['cluster_id'].astype(str) + "|" + uuid_str
     df_to_upload['id'] = uuid_str
 
@@ -75,53 +76,57 @@ def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang):
     )
 
     print("--- Finished: Clustering issues ---")
-    return uuid_str
 
-def run_pipeline():
+async def run_pipeline(startDate, endDate, lang, task_id):
     """主函数，按顺序运行整个数据处理流程"""
     print(f"======== Starting Data Processing Pipeline ========")
     bq_handler = BigQueryHandler(config_path="config.toml")
-            
-    # 聚类
-    print("--- Starting: CLustering tickets ---")
-    startDate = "2025-06-10"
-    endDate = "2025-06-11"
-    # lang = "English(en-us)"
-    lang = "西班牙语(es-es)"
-    task_id = cluster_issues(bq_handler, startDate, endDate, lang)
-    print(f"Task ID: {task_id}")
     
-    # 生成 FAQ
-    print("--- Starting: Generating FAQ from clusters ---")
-    sql = get_template("sql/4_generate_faq.sql").format(
-        project_id = PROJECT_ID,
-        dataset_id = DATASET_ID,
-        faq_table = bq_config['faq_table_name'],
-        summary_model = bq_config['summary_model'],
-        cluster_table = bq_config['cluster_table_name'],
-        summary_table = bq_config['summary_table_name'],
-        task_id = task_id,
-    )
-    bq_handler.execute_sql(sql)
+    try:
+        # 聚类
+        print("--- Starting: CLustering tickets ---")
+        cluster_issues(bq_handler, startDate, endDate, lang, task_id)
+        print(f"Task ID: {task_id}")
         
-    print(f"======== Pipeline Completed Successfully ========")
-    # 合并最终结果
-    # print("--- Starting: Merging final results for each date ---")
-    # merge_template = get_template("sql/5_merge_results.sql")
-    # for dt_param in dates_to_process:
-    #     print(f"--- Processing merge for date: {dt_param} ---")
-    #     sql = merge_template.format(
-    #         project_id=PROJECT_ID,
-    #         dataset_id=DATASET_ID,
-    #         result_table=bq_config['result_table_name'],
-    #         faq_table=bq_config['faq_table_name'],
-    #         cluster_table=bq_config['cluster_table_name'],
-    #         dt=dt_param
-    #     )
-    #     bq_handler.execute_sql(sql)
-    #     print(f"--- Finished merging for date: {dt_param} ---")
+        # 生成 FAQ
+        print("--- Starting: Generating FAQ from clusters ---")
+        sql = get_template("sql/4_generate_faq.sql").format(
+            project_id = PROJECT_ID,
+            dataset_id = DATASET_ID,
+            faq_table = bq_config['faq_table_name'],
+            summary_model = bq_config['summary_model'],
+            cluster_table = bq_config['cluster_table_name'],
+            summary_table = bq_config['summary_table_name'],
+            task_id = task_id,
+        )
+        bq_handler.execute_sql(sql)
+        print(f"======== Pipeline Completed Successfully ========")
+        
+        # 更新任务状态为 'success'
+        update_status_query = f"""
+            UPDATE `{PROJECT_ID}.{DATASET_ID}.{TASK_STATUS_TABLE}`
+            SET status = 'success', updated_at = FORMAT_TIMESTAMP('%Y-%m-%d %H:%M:%S', CURRENT_TIMESTAMP())
+            WHERE task_id = '{task_id}'
+        """
+        bq_handler.execute_sql(update_status_query)
+        print(f"Task {task_id} status updated to 'success'.")
+
+    except Exception as e:
+        print(f"======== Pipeline Failed: {e} ========")
+        # 更新任务状态为 'failed'
+        error_message_escaped = str(e).replace("'", "\\'")
+        update_status_query = f"""
+            UPDATE `{PROJECT_ID}.{DATASET_ID}.{TASK_STATUS_TABLE}`
+            SET status = 'failed', error_message = '{error_message_escaped}', updated_at = FORMAT_TIMESTAMP('%Y-%m-%d %H:%M:%S', CURRENT_TIMESTAMP())
+            WHERE task_id = '{task_id}'
+        """
+        bq_handler.execute_sql(update_status_query)
+        print(f"Task {task_id} status updated to 'failed'. Error: {e}")
 
 
-
-if __name__ == "__main__":
-    run_pipeline()
+# if __name__ == "__main__":
+#     startDate = "2025-06-10"
+#     endDate = "2025-06-11"
+#     # lang = "English(en-us)"
+#     lang = "西班牙语(es-es)"
+#     run_pipeline(startDate, endDate, lang)
