@@ -22,6 +22,7 @@ with open("config.toml", "r") as f:
 app_config = config['app']
 bq_config = config['bigquery']
 clustering_config = config['clustering']
+bq = BigQueryHandler(config_path="config.toml")
 
 # --- 常量 ---
 HDBDSCAN_MIN_SAMPLES = clustering_config['hdbscan_min_samples']
@@ -30,16 +31,16 @@ DATASET_ID = bq_config['dataset_id']
 TASK_STATUS_TABLE = bq_config['task_status_table_name']
 
 # --- 函数定义 ---
-def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang, task_id):
+def cluster_issues(business, startDate, endDate, lang, task_id):
     print(f"--- Processing clusters for date range: {startDate} to {endDate} ---")
     embedding_table_id = f"{PROJECT_ID}.{DATASET_ID}.{bq_config['embedding_table_name']}"
     cluster_table_name = bq_config['cluster_table_name']
 
     # 获取该日期的数据
     if lang == "all":
-        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}'"
+        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}' and business = '{business}'"
     else:
-        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}' and ticket_language = '{lang}'"
+        query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}' and business = '{business}' and ticket_language = '{lang}'"
     df = bq.read_gbq_to_dataframe(query)
 
     if df is None or df.empty:
@@ -77,15 +78,14 @@ def cluster_issues(bq: BigQueryHandler, startDate, endDate, lang, task_id):
 
     print("--- Finished: Clustering issues ---")
 
-def run_pipeline(startDate, endDate, lang, task_id):
+def run_pipeline(business, startDate, endDate, lang, task_id):
     """主函数，按顺序运行整个数据处理流程"""
     print(f"======== Starting Data Processing Pipeline ========")
-    bq_handler = BigQueryHandler(config_path="config.toml")
-    
+
     try:
         # 聚类
         print("--- Starting: CLustering tickets ---")
-        cluster_issues(bq_handler, startDate, endDate, lang, task_id)
+        cluster_issues(business, startDate, endDate, lang, task_id)
         print(f"Task ID: {task_id}")
         
         # 生成 FAQ
@@ -99,8 +99,7 @@ def run_pipeline(startDate, endDate, lang, task_id):
             summary_table = bq_config['summary_table_name'],
             task_id = task_id,
         )
-        bq_handler.execute_sql(sql)
-        print(f"======== Pipeline Completed Successfully ========")
+        bq.execute_sql(sql)
         
         # 更新任务状态为 'success'
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -109,18 +108,20 @@ def run_pipeline(startDate, endDate, lang, task_id):
             SET status = 'success', updated_at = '{time}'
             WHERE task_id = '{task_id}'
         """
-        bq_handler.execute_sql(update_status_query)
+        bq.execute_sql(update_status_query)
         print(f"Task {task_id} status updated to 'success'.")
+        print(f"======== Pipeline Completed Successfully ========")        
 
     except Exception as e:
         print(f"======== Pipeline Failed: {e} ========")
         # 更新任务状态为 'failed'
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         error_message_escaped = str(e).replace("'", "\\'")
         update_status_query = f"""
             UPDATE `{PROJECT_ID}.{DATASET_ID}.{TASK_STATUS_TABLE}`
-            SET status = 'failed', error_message = '{error_message_escaped}', updated_at = FORMAT_TIMESTAMP('%Y-%m-%d %H:%M:%S', CURRENT_TIMESTAMP())
+            SET status = 'failed', error_message = '{error_message_escaped}', updated_at = '{time}'
             WHERE task_id = '{task_id}'
         """
-        bq_handler.execute_sql(update_status_query)
+        bq.execute_sql(update_status_query)
         print(f"Task {task_id} status updated to 'failed'. Error: {e}")
 

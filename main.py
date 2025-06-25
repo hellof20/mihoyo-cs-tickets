@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from datetime import date, datetime # 导入 datetime
@@ -18,6 +17,7 @@ bq_handler = BigQueryHandler(config_path="config.toml")
 task_status_table = bq_config['task_status_table_name']
 
 class ClusterRequest(BaseModel):
+    business: str
     startDate: date
     endDate: date
     lang: str
@@ -32,6 +32,7 @@ async def run_cluster_issues(request: ClusterRequest, background_tasks: Backgrou
     # 准备初始任务状态数据
     initial_status_data = {
         "task_id": task_id,
+        "business": request.business,
         "start_date": request.startDate.strftime("%Y-%m-%d"),
         "end_date": request.endDate.strftime("%Y-%m-%d"),
         "lang": request.lang,
@@ -54,6 +55,7 @@ async def run_cluster_issues(request: ClusterRequest, background_tasks: Backgrou
     # 它将在独立的线程中运行 run_pipeline，不会阻塞主事件循环
     background_tasks.add_task(
         run_pipeline,
+        request.business,
         request.startDate.strftime("%Y-%m-%d"),
         request.endDate.strftime("%Y-%m-%d"),
         request.lang,

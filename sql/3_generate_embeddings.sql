@@ -19,7 +19,6 @@ FROM ML.GENERATE_EMBEDDING(
     (
         SELECT user_issue AS content, *
         FROM `{project_id}.{dataset_id}.{summary_table}`
-        WHERE user_issue IS NOT NULL
-          AND unspecified_issue = 'false'
+        WHERE user_issue IS NOT NULL AND unspecified_issue = 'false'
     )
 );
