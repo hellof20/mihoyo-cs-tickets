@@ -1,12 +1,24 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import date, datetime # 导入 datetime
 from cluster_issue import run_pipeline
 import uuid
 from bq_handler import BigQueryHandler # 导入 BigQueryHandler
+from summary_issue import run_summary_pipeline
+import multiprocessing
 import toml # 导入 toml
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React development server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 加载配置 (这里也需要加载配置来获取 task_status_table_name)
 with open("config.toml", "r") as f:
@@ -28,7 +40,6 @@ async def run_cluster_issues(request: ClusterRequest, background_tasks: Backgrou
         raise HTTPException(status_code=400, detail="Invalid parameter format: startDate cannot be after endDate")
     
     task_id = str(uuid.uuid4())
-
     # 准备初始任务状态数据
     initial_status_data = {
         "task_id": task_id,
@@ -70,6 +81,16 @@ async def run_cluster_issues(request: ClusterRequest, background_tasks: Backgrou
         "status": "running",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
+
+summary_process = None
+
+@app.on_event("startup")
+async def startup_event():
+    global summary_process
+    print("Starting summary pipeline in background...")
+    summary_process = multiprocessing.Process(target=run_summary_pipeline)
+    summary_process.start()
+    print(f"Summary pipeline process started with PID: {summary_process.pid}")        
 
 @app.get("/tasks/{task_id}")
 async def get_task_status(task_id: str):

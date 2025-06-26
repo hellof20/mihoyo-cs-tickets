@@ -41,6 +41,7 @@ def cluster_issues(business, startDate, endDate, lang, task_id):
         query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}' and business = '{business}'"
     else:
         query = f"SELECT ticket_id, issue_embedding FROM `{embedding_table_id}` WHERE dt between '{startDate}' and '{endDate}' and business = '{business}' and ticket_language = '{lang}'"
+    print(query)
     df = bq.read_gbq_to_dataframe(query)
 
     if df is None or df.empty:

@@ -31,7 +31,7 @@ HDBDSCAN_MIN_SAMPLES = clustering_config['hdbscan_min_samples']
 PROJECT_ID = app_config['project_id']
 DATASET_ID = bq_config['dataset_id']
 
-def run_pipeline():
+def run_summary_pipeline():
     """主函数，按顺序运行整个数据处理流程"""
     print(f"======== Starting Data Processing Pipeline ========")
     bq_handler = BigQueryHandler(config_path="config.toml")
@@ -85,4 +85,4 @@ def run_pipeline():
             bq_handler.execute_sql(sql)
 
 if __name__ == "__main__":
-    run_pipeline()
+    run_summary_pipeline()

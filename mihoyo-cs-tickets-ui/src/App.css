@@ -1,0 +1,63 @@
+.App {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.App-header {
+  background-color: #fff;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.App-header h1 {
+  margin: 0;
+  color: #1890ff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-form {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.ant-table {
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+.ant-table-wrapper {
+  margin-top: 16px;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  main {
+    padding: 16px;
+    margin: 16px;
+  }
+
+  .App-header {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .App-header h1 {
+    font-size: 20px;
+  }
+}
