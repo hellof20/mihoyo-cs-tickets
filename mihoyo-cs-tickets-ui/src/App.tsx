@@ -9,7 +9,9 @@ import './App.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
+      refetchOnMount: true, // Only fetch on first mount
+      refetchOnWindowFocus: false, // Disable refetch on window focus
+      refetchInterval: false, // Disable polling
       retry: 1,
     },
   },

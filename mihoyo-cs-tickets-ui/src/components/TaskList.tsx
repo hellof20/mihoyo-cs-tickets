@@ -5,8 +5,6 @@ import { useQuery, Query } from '@tanstack/react-query';
 import { listTasks } from '../services/api';
 import { TaskStatus } from '../types';
 
-const POLL_INTERVAL = 5000; // 5 seconds
-
 const { Option } = Select;
 
 const TaskList: React.FC = () => {
@@ -14,6 +12,21 @@ const TaskList: React.FC = () => {
   const [current, setCurrent] = useState(1);
   const [lang, setLang] = useState<string>();
   const [status, setStatus] = useState<string>();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Fetch data when component mounts
+  React.useEffect(() => {
+    handleRefresh();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data, isLoading, refetch } = useQuery<TaskStatus[]>({
     queryKey: ['tasks', current, pageSize, lang, status],
@@ -23,13 +36,7 @@ const TaskList: React.FC = () => {
       lang,
       status,
     }),
-    refetchInterval: (query: Query<TaskStatus[], Error>) => {
-      // Only poll if there are running tasks
-      const data = query.state.data;
-      return data?.some(task => task.status === 'running')
-        ? POLL_INTERVAL
-        : false;
-    },
+    enabled: false, // Disable automatic fetching
   });
 
   const columns = [
@@ -127,8 +134,8 @@ const TaskList: React.FC = () => {
         <Tooltip title="Refresh">
           <Button 
             icon={<ReloadOutlined />} 
-            onClick={() => refetch()}
-            loading={isLoading}
+            onClick={handleRefresh}
+            loading={refreshing}
           />
         </Tooltip>
       </Space>
@@ -137,7 +144,7 @@ const TaskList: React.FC = () => {
         columns={columns}
         dataSource={data}
         rowKey="task_id"
-        loading={isLoading}
+        loading={refreshing}
         pagination={{
           current,
           pageSize,

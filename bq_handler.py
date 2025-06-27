@@ -10,7 +10,7 @@ class BigQueryHandler:
             
             self.project_id = config['app']['project_id']
             self.dataset_id = config['bigquery']['dataset_id']
-            self.client = bigquery.Client(project=self.project_id)
+            self.config_path = config_path
             print(f"BigQueryHandler initialized for project '{self.project_id}'.")
             
         except FileNotFoundError:
@@ -20,15 +20,22 @@ class BigQueryHandler:
             print(f"Error: Missing key {e} in configuration file.")
             raise
 
+    def _get_client(self):
+        """Create a new BigQuery client instance for each operation"""
+        return bigquery.Client(project=self.project_id)
+
     def execute_sql(self, sql_query: str):
         print(f"Executing SQL query...")
+        client = self._get_client()
         try:
-            query_job = self.client.query(sql_query)
+            query_job = client.query(sql_query)
             query_job.result()  # 等待查询完成
             print("Query executed successfully.")
         except Exception as e:
             print(f"An error occurred while executing the query: {e}")
             raise
+        finally:
+            client.close()
 
     def read_gbq_to_dataframe(self, query: str) -> pd.DataFrame:
         """
@@ -41,13 +48,16 @@ class BigQueryHandler:
             pd.DataFrame: 包含查询结果的 DataFrame。
         """
         print("Reading data from BigQuery into DataFrame...")
+        client = self._get_client()
         try:
-            df = self.client.query(query).to_dataframe()
+            df = client.query(query).to_dataframe()
             print(f"Successfully read {len(df)} rows into DataFrame.")
             return df
         except Exception as e:
             print(f"An error occurred while reading from BigQuery: {e}")
             raise
+        finally:
+            client.close()
 
     def upload_dataframe_to_gbq(self, df: pd.DataFrame, table_id: str, if_exists: str = 'replace'):
         if df.empty:
@@ -69,8 +79,9 @@ class BigQueryHandler:
             autodetect=True, 
         )
 
+        client = self._get_client()
         try:
-            job = self.client.load_table_from_dataframe(
+            job = client.load_table_from_dataframe(
                 df, full_table_id, job_config=job_config
             )
             job.result()  # 等待作业完成
@@ -78,6 +89,8 @@ class BigQueryHandler:
         except Exception as e:
             print(f"An error occurred during DataFrame upload: {e}")
             raise
+        finally:
+            client.close()
             
     # def ensure_table_exists(self, table_id: str, schema_query: str):
     #     """
@@ -115,18 +128,21 @@ class BigQueryHandler:
             allow_quoted_newlines=True,
         )
 
+        client = self._get_client()
         try:
-            load_job = self.client.load_table_from_uri(
+            load_job = client.load_table_from_uri(
                 gcs_uri, full_table_id, job_config=job_config
             )
             load_job.result()  # 等待加载作业完成
             
-            destination_table = self.client.get_table(full_table_id)
+            destination_table = client.get_table(full_table_id)
             print(f"Loaded {destination_table.num_rows} rows into {full_table_id}.")
             
         except Exception as e:
             print(f"An error occurred while loading data from GCS: {e}")
             raise
+        finally:
+            client.close()
 
     def get_task_status(self, table_id: str, task_id: str) -> pd.DataFrame:
         """
@@ -171,4 +187,3 @@ class BigQueryHandler:
         except Exception as e:
             print(f"Error listing tasks: {e}")
             raise
-

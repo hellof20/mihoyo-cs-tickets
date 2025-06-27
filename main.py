@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import date, datetime # 导入 datetime
@@ -14,7 +14,7 @@ app = FastAPI()
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React development server
+    allow_origins=["*"],  # React development server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,7 +35,7 @@ class ClusterRequest(BaseModel):
     lang: str
 
 @app.post("/cluster_issues")
-async def run_cluster_issues(request: ClusterRequest, background_tasks: BackgroundTasks):
+async def run_cluster_issues(request: ClusterRequest):
     if request.startDate > request.endDate:
         raise HTTPException(status_code=400, detail="Invalid parameter format: startDate cannot be after endDate")
     
@@ -63,15 +63,19 @@ async def run_cluster_issues(request: ClusterRequest, background_tasks: Backgrou
         print(f"Error writing initial task status to BigQuery: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to record initial task status: {e}")
 
-    # 它将在独立的线程中运行 run_pipeline，不会阻塞主事件循环
-    background_tasks.add_task(
-        run_pipeline,
-        request.business,
-        request.startDate.strftime("%Y-%m-%d"),
-        request.endDate.strftime("%Y-%m-%d"),
-        request.lang,
-        task_id
+    # 使用multiprocessing运行pipeline
+    cluster_process = multiprocessing.Process(
+        target=run_pipeline,
+        args=(
+            request.business,
+            request.startDate.strftime("%Y-%m-%d"),
+            request.endDate.strftime("%Y-%m-%d"),
+            request.lang,
+            task_id
+        )
     )
+    cluster_process.start()
+    print(f"Cluster pipeline process started with PID: {cluster_process.pid}")
 
     return {
         "task_id": task_id,
