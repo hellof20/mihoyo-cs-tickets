@@ -38,3 +38,28 @@ export const listTasks = async (params: TaskListParams): Promise<TaskStatus[]> =
   const response = await api.get('/tasks', { params });
   return response.data;
 };
+
+export interface FaqItem {
+  cluster_id: string;
+  business: string;
+  num_tickets: number;
+  summarized: string;
+}
+
+export const getFaq = async (taskId: string): Promise<FaqItem[]> => {
+  const response = await api.get(`/tasks/${taskId}/faq`);
+  return response.data;
+};
+
+export interface ClusterDetailItem {
+  ticket_id: string;
+  ticket_language: string;
+  dt: string;
+  player_issue_description: string;
+  user_issue: string;
+}
+
+export const getClusterDetail = async (clusterId: string): Promise<ClusterDetailItem[]> => {
+  const response = await api.get(`/clusters/${clusterId}/detail`);
+  return response.data;
+};

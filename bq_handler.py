@@ -91,23 +91,6 @@ class BigQueryHandler:
             raise
         finally:
             client.close()
-            
-    # def ensure_table_exists(self, table_id: str, schema_query: str):
-    #     """
-    #     确保一个表存在，如果不存在，则根据提供的 schema_query 创建它。
-        
-    #     Args:
-    #         table_id (str): 目标表的ID。
-    #         schema_query (str): 用于创建空表的 `CREATE TABLE ... AS SELECT ... WHERE 1=0` 查询。
-    #     """
-        
-    #     try:
-    #         full_table_id = f"{self.project_id}.{self.dataset_id}.{table_id}"
-    #         self.client.get_table(full_table_id)
-    #         print(f"Table {full_table_id} already exists.")
-    #     except Exception: # google.api_core.exceptions.NotFound
-    #         print(f"Table {full_table_id} not found. Creating it now...")
-    #         self.execute_sql(schema_query)
 
     def load_csv_from_gcs_to_bq(self, gcs_uri: str, table_id: str, if_exists: str = 'replace'):
         full_table_id = f"{self.project_id}.{self.dataset_id}.{table_id}"
@@ -186,4 +169,42 @@ class BigQueryHandler:
             return df
         except Exception as e:
             print(f"Error listing tasks: {e}")
+            raise
+
+    def get_faq(self, task_id: str) -> pd.DataFrame:
+        """
+        根据 task_id 从 BigQuery 查询 FAQ 数据。
+        """
+        query = f"""
+        SELECT cluster_id, business, num_tickets, summarized
+        FROM `speedy-victory-336109.nap_tickets.issue_faq` 
+        WHERE task_id = '{task_id}'
+        ORDER BY num_tickets DESC
+        """
+        print(f"Fetching FAQ data for task_id: {task_id}...")
+        try:
+            df = self.read_gbq_to_dataframe(query)
+            print(f"Successfully fetched {len(df)} FAQ entries.")
+            return df
+        except Exception as e:
+            print(f"Error fetching FAQ data for {task_id}: {e}")
+            raise
+
+    def get_cluster_detail(self, cluster_id: str) -> pd.DataFrame:
+        """
+        根据 cluster_id 从 BigQuery 查询聚类详细信息。
+        """
+        query = f"""
+        SELECT a.ticket_id, ticket_language, dt, player_issue_description, user_issue
+        FROM `nap_tickets.issue_summary` a 
+        LEFT JOIN `nap_tickets.issue_cluster` b ON a.ticket_id = b.ticket_id
+        WHERE b.cluster_id = '{cluster_id}'
+        """
+        print(f"Fetching cluster details for cluster_id: {cluster_id}...")
+        try:
+            df = self.read_gbq_to_dataframe(query)
+            print(f"Successfully fetched {len(df)} cluster detail entries.")
+            return df
+        except Exception as e:
+            print(f"Error fetching cluster details for {cluster_id}: {e}")
             raise

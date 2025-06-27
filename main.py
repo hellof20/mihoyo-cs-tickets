@@ -84,7 +84,37 @@ async def run_cluster_issues(request: ClusterRequest):
         "lang": request.lang,
         "status": "running",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
+    }
+
+@app.get("/tasks/{task_id}/faq")
+async def get_task_faq(task_id: str):
+    """
+    获取指定任务ID的FAQ数据。
+    """
+    try:
+        df_faq = bq_handler.get_faq(task_id)
+        if df_faq.empty:
+            raise HTTPException(status_code=404, detail=f"No FAQ data found for task ID {task_id}.")
+        # 将 DataFrame 转换为字典列表
+        return df_faq.to_dict(orient='records')
+    except Exception as e:
+        print(f"Error fetching FAQ data for {task_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch FAQ data: {e}")
+
+@app.get("/clusters/{cluster_id}/detail")
+async def get_cluster_detail(cluster_id: str):
+    """
+    获取指定聚类ID的详细信息。
+    """
+    try:
+        df_detail = bq_handler.get_cluster_detail(cluster_id)
+        if df_detail.empty:
+            raise HTTPException(status_code=404, detail=f"No detail data found for cluster ID {cluster_id}.")
+        # 将 DataFrame 转换为字典列表
+        return df_detail.to_dict(orient='records')
+    except Exception as e:
+        print(f"Error fetching cluster details for {cluster_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch cluster details: {e}")
 
 summary_process = None
 

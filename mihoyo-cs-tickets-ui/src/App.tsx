@@ -1,9 +1,13 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Tabs, ConfigProvider } from 'antd';
+import { ConfigProvider } from 'antd';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ClusterForm from './components/ClusterForm';
 import TaskList from './components/TaskList';
+import FaqPage from './components/FaqPage';
+import ClusterDetail from './components/ClusterDetail';
+import Navigation from './components/Navigation';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -18,19 +22,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const items = [
-    {
-      key: '1',
-      label: 'Submit Task',
-      children: <ClusterForm />,
-    },
-    {
-      key: '2',
-      label: 'Task List',
-      children: <TaskList />,
-    },
-  ];
-
   return (
     <QueryClientProvider client={queryClient}>
       <ConfigProvider
@@ -40,14 +31,23 @@ function App() {
           },
         }}
       >
-        <div className="App">
-          <header className="App-header">
-            <h1>Mihoyo CS Tickets Management</h1>
-          </header>
-          <main>
-            <Tabs defaultActiveKey="1" items={items} />
-          </main>
-        </div>
+        <BrowserRouter>
+          <div className="App">
+            <header className="App-header">
+              <h1>Mihoyo CS Tickets Management</h1>
+              <Navigation />
+            </header>
+            <main>
+              <Routes>
+                <Route path="/" element={<Navigate to="/submit" replace />} />
+                <Route path="/submit" element={<ClusterForm />} />
+                <Route path="/tasks" element={<TaskList />} />
+                <Route path="/faq/:taskId" element={<FaqPage />} />
+                <Route path="/cluster/:clusterId" element={<ClusterDetail />} />
+              </Routes>
+            </main>
+          </div>
+        </BrowserRouter>
       </ConfigProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

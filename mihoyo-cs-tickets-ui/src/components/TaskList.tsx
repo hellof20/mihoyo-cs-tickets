@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { Table, Tag, Space, Select, Button, Tooltip } from 'antd';
+import { Table, Tag, Space, Select, Button, Tooltip, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
-import { useQuery, Query } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { listTasks } from '../services/api';
 import { TaskStatus } from '../types';
 
 const { Option } = Select;
+const { Text } = Typography;
 
 const TaskList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [current, setCurrent] = useState(1);
-  const [lang, setLang] = useState<string>();
-  const [status, setStatus] = useState<string>();
   const [refreshing, setRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -29,17 +30,23 @@ const TaskList: React.FC = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data, isLoading, refetch } = useQuery<TaskStatus[]>({
-    queryKey: ['tasks', current, pageSize, lang, status],
+    queryKey: ['tasks', current, pageSize],
     queryFn: () => listTasks({
       limit: pageSize,
-      offset: (current - 1) * pageSize,
-      lang,
-      status,
+      offset: (current - 1) * pageSize
     }),
     enabled: false, // Disable automatic fetching
   });
 
-  const columns = [
+  const handleViewFaq = (taskId: string) => {
+    navigate(`/faq/${taskId}`);
+  };
+
+  const handleViewDetail = (clusterId: string) => {
+    navigate(`/cluster/${clusterId}`);
+  };
+
+  const taskColumns = [
     {
       title: 'Task ID',
       dataIndex: 'task_id',
@@ -65,7 +72,7 @@ const TaskList: React.FC = () => {
       key: 'status',
       render: (status: string) => {
         let color = status === 'running' ? 'processing' : 
-                   status === 'completed' ? 'success' : 
+                   status === 'success' ? 'success' : 
                    status === 'failed' ? 'error' :
                    status === 'canceled' ? 'warning' : 'default';
         return (
@@ -100,37 +107,25 @@ const TaskList: React.FC = () => {
       ellipsis: true,
       render: (text: string) => text || '-',
     },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: any, record: TaskStatus) => (
+        <Button 
+          type="link" 
+          onClick={() => handleViewFaq(record.task_id)}
+          disabled={record.status !== 'success'}
+        >
+          View FAQ
+        </Button>
+      ),
+    },
   ];
+
 
   return (
     <div style={{ padding: '24px' }}>
-      <Space style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <Space>
-        <Select
-          placeholder="Select Language"
-          allowClear
-          onChange={setLang}
-          style={{ width: 120 }}
-        >
-          <Option value="all">All Languages</Option>
-          <Option value="en-us">English (en-us)</Option>
-          <Option value="zh-cn">简体中文 (zh-cn)</Option>
-          <Option value="ru-ru">Русский (ru-ru)</Option>
-          <Option value="ja-jp">日本語 (ja-jp)</Option>
-          <Option value="fr-fr">Français (fr-fr)</Option>
-        </Select>
-        <Select
-          placeholder="Select Status"
-          allowClear
-          onChange={setStatus}
-          style={{ width: 120 }}
-        >
-          <Option value="running">Running</Option>
-          <Option value="completed">Completed</Option>
-          <Option value="failed">Failed</Option>
-          <Option value="canceled">Canceled</Option>
-        </Select>
-        </Space>
+      <Space style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
         <Tooltip title="Refresh">
           <Button 
             icon={<ReloadOutlined />} 
@@ -141,7 +136,7 @@ const TaskList: React.FC = () => {
       </Space>
 
       <Table
-        columns={columns}
+        columns={taskColumns}
         dataSource={data}
         rowKey="task_id"
         loading={refreshing}
