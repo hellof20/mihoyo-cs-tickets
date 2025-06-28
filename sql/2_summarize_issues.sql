@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{summary_table}`
 (
-    unspecified_issue STRING,
     user_issue STRING,
     user_sentiment STRING,
     full_response JSON,
@@ -21,8 +20,7 @@ CREATE TABLE IF NOT EXISTS `{project_id}.{dataset_id}.{summary_table}`
 ) PARTITION BY dt;
 
 INSERT INTO `{project_id}.{dataset_id}.{summary_table}`
-SELECT 
-    unspecified_issue,
+SELECT
     user_issue,
     user_sentiment,
     full_response,
@@ -54,7 +52,7 @@ FROM AI.GENERATE_TABLE(
                 '##4. Your entire output must be in Chinese.',
                 '</instruction>',
                 '<output_format>',
-                '{{"user_issue": "用户问题的中文总结，包含问题细节", "unspecified_issue": "如果问题不明确则返回true，否则返回false", "user_sentiment":"positive|negative|neutral"}}',
+                '{{"user_issue": "用户问题的中文总结，包含问题细节", "user_sentiment":"positive|negative|neutral"}}',
                 '</output_format>',
                 '<player_question>',
                 player_issue_description,
@@ -63,5 +61,5 @@ FROM AI.GENERATE_TABLE(
         FROM `{project_id}.{dataset_id}.{raw_data_view}`
         WHERE player_issue_description IS NOT NULL
     ),
-    STRUCT("user_issue STRING, unspecified_issue STRING, user_sentiment STRING" as output_schema, 0.1 AS temperature, 2048 AS max_output_tokens)
+    STRUCT("user_issue STRING, user_sentiment STRING" as output_schema, 0.1 AS temperature, 2048 AS max_output_tokens)
 )

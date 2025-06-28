@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Table, Tag, Space, Select, Button, Tooltip, Typography } from 'antd';
+import { Table, Tag, Space, Button, Tooltip } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { listTasks } from '../services/api';
 import { TaskStatus } from '../types';
-
-const { Option } = Select;
-const { Text } = Typography;
 
 const TaskList: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
@@ -29,7 +26,7 @@ const TaskList: React.FC = () => {
     handleRefresh();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data, isLoading, refetch } = useQuery<TaskStatus[]>({
+  const { data, refetch } = useQuery<TaskStatus[]>({
     queryKey: ['tasks', current, pageSize],
     queryFn: () => listTasks({
       limit: pageSize,
@@ -40,10 +37,6 @@ const TaskList: React.FC = () => {
 
   const handleViewFaq = (taskId: string) => {
     navigate(`/faq/${taskId}`);
-  };
-
-  const handleViewDetail = (clusterId: string) => {
-    navigate(`/cluster/${clusterId}`);
   };
 
   const taskColumns = [
