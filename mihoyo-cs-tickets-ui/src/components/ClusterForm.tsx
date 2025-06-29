@@ -1,45 +1,41 @@
 import React from 'react';
-import { Form, DatePicker, Select, Button, message } from 'antd';
+import { Form, DatePicker, Select, Button } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { useMutation } from '@tanstack/react-query';
 import { submitClusterIssues } from '../services/api';
 import { ClusterRequest } from '../types';
 
 const { RangePicker } = DatePicker;
 
-const ClusterForm: React.FC = () => {
+interface ClusterFormProps {
+  messageApi: MessageInstance;
+}
+
+const ClusterForm: React.FC<ClusterFormProps> = ({ messageApi }) => {
   const [form] = Form.useForm();
 
   const mutation = useMutation({
     mutationFn: submitClusterIssues,
     onMutate: () => {
-      message.loading({
+      messageApi.loading({
         content: 'Creating task...',
         duration: 0,
         key: 'taskCreation',
-        style: {
-          marginTop: '20vh',
-        },
       });
     },
     onSuccess: (data) => {
-      message.destroy('taskCreation');
-      message.success({
+      messageApi.destroy('taskCreation');
+      messageApi.success({
         content: `Task created successfully (ID: ${data.task_id})`,
         duration: 5,
-        style: {
-          marginTop: '20vh',
-        },
       });
       form.resetFields();
     },
     onError: (error) => {
-      message.destroy('taskCreation');
-      message.error({
+      messageApi.destroy('taskCreation');
+      messageApi.error({
         content: `Failed to create task: ${error.message}`,
         duration: 5,
-        style: {
-          marginTop: '20vh',
-        },
       });
     },
     retry: 0, // Don't retry on failure
@@ -63,12 +59,9 @@ const ClusterForm: React.FC = () => {
       console.log('Submitting cluster request:', JSON.stringify(request, null, 2));
       mutation.mutate(request);
     } catch (error) {
-      message.error({
+      messageApi.error({
         content: 'Failed to create request: Invalid form data',
         duration: 5,
-        style: {
-          marginTop: '20vh',
-        },
       });
       console.error('Error creating request:', error);
     }

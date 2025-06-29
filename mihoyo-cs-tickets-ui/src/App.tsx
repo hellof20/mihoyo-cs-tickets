@@ -1,7 +1,7 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, message } from 'antd';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ClusterForm from './components/ClusterForm';
 import TaskList from './components/TaskList';
@@ -22,6 +22,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const [messageApi, contextHolder] = message.useMessage();
+
   return (
     <QueryClientProvider client={queryClient}>
       <ConfigProvider
@@ -31,6 +33,7 @@ function App() {
           },
         }}
       >
+        {contextHolder}
         <BrowserRouter>
           <div className="App">
             <header className="App-header">
@@ -40,7 +43,7 @@ function App() {
             <main>
               <Routes>
                 <Route path="/" element={<Navigate to="/submit" replace />} />
-                <Route path="/submit" element={<ClusterForm />} />
+                <Route path="/submit" element={<ClusterForm messageApi={messageApi} />} />
                 <Route path="/tasks" element={<TaskList />} />
                 <Route path="/faq/:taskId" element={<FaqPage />} />
                 <Route path="/cluster/:clusterId" element={<ClusterDetail />} />

@@ -1,12 +1,74 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, Tag, Space, Spin, Table } from 'antd';
-import { getClusterDetail, ClusterDetailItem } from '../services/api';
+import { getClusterDetail } from '../services/api';
+import { Resizable } from 'react-resizable';
+import type { TableProps } from 'antd';
+
+const ResizableTitle = (props: any) => {
+  const { onResize, width, ...restProps } = props;
+
+  if (!width) {
+    return <th {...restProps} />;
+  }
+
+  return (
+    <Resizable
+      width={width}
+      height={0}
+      handle={
+        <span
+          className="react-resizable-handle"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        />
+      }
+      onResize={onResize}
+      draggableOpts={{ enableUserSelectHack: false }}
+    >
+      <th {...restProps} />
+    </Resizable>
+  );
+};
 
 const ClusterDetail: React.FC = () => {
   const { clusterId } = useParams<{ clusterId: string }>();
   const navigate = useNavigate();
+
+  const [columns, setColumns] = useState([
+    {
+      title: 'Ticket ID',
+      dataIndex: 'ticket_id',
+      key: 'ticket_id',
+      width: 120,
+    },
+    {
+      title: 'Language',
+      dataIndex: 'ticket_language',
+      key: 'ticket_language',
+      width: 100,
+      render: (lang: string) => <Tag color="blue">{lang}</Tag>,
+    },
+    {
+      title: 'Date',
+      dataIndex: 'dt',
+      key: 'dt',
+      width: 120,
+    },
+    {
+      title: 'Player Issue',
+      dataIndex: 'player_issue_description',
+      key: 'player_issue_description',
+      width: 300,
+    },
+    {
+      title: 'User Issue',
+      dataIndex: 'user_issue',
+      key: 'user_issue',
+    },
+  ]);
 
   const { data: clusterData, isLoading } = useQuery({
     queryKey: ['cluster', clusterId],
@@ -33,6 +95,25 @@ const ClusterDetail: React.FC = () => {
     );
   }
 
+  const handleResize =
+    (index: number) =>
+    (_: any, { size }: any) => {
+      const newColumns = [...columns];
+      newColumns[index] = {
+        ...newColumns[index],
+        width: size.width,
+      };
+      setColumns(newColumns);
+    };
+
+  const mergedColumns = columns.map((col, index) => ({
+    ...col,
+    onHeaderCell: (column: any) => ({
+      width: column.width,
+      onResize: handleResize(index),
+    }),
+  }));
+
   return (
     <div style={{ padding: '24px' }}>
       <Space style={{ marginBottom: 16 }}>
@@ -41,40 +122,15 @@ const ClusterDetail: React.FC = () => {
       
       <Card title={`Cluster ${clusterId}`}>
         <Table
+          bordered
+          components={{
+            header: {
+              cell: ResizableTitle,
+            },
+          }}
           dataSource={clusterData}
           rowKey="ticket_id"
-          columns={[
-            {
-              title: 'Ticket ID',
-              dataIndex: 'ticket_id',
-              key: 'ticket_id',
-              width: 120,
-            },
-            {
-              title: 'Language',
-              dataIndex: 'ticket_language',
-              key: 'ticket_language',
-              width: 100,
-              render: (lang: string) => <Tag color="blue">{lang}</Tag>,
-            },
-            {
-              title: 'Date',
-              dataIndex: 'dt',
-              key: 'dt',
-              width: 120,
-            },
-            {
-              title: 'Player Issue',
-              dataIndex: 'player_issue_description',
-              key: 'player_issue_description',
-              width: 300,
-            },
-            {
-              title: 'User Issue',
-              dataIndex: 'user_issue',
-              key: 'user_issue',
-            },
-          ]}
+          columns={mergedColumns as TableProps['columns']}
           scroll={{ x: true }}
           pagination={{ pageSize: 10 }}
         />
