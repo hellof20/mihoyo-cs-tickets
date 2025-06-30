@@ -97,6 +97,15 @@ Edit `config.toml` to configure:
 - Application parameters
 - API endpoints
 
+## Demo
+![image](https://github.com/user-attachments/assets/0489a18c-54b1-405b-8e5b-8da1dbb5da5a)
+
+![image](https://github.com/user-attachments/assets/6c67b0f0-c6f8-4e6e-93d5-53f6453aed35)
+
+![image](https://github.com/user-attachments/assets/74630298-c9a0-4b00-85a2-dc3a4ca9e5e8)
+
+![image](https://github.com/user-attachments/assets/c50b2713-c337-4906-bc19-bf909650e856)
+
 ## License
 
 [Add your license information here]
