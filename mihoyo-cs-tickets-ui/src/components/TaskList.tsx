@@ -21,18 +21,14 @@ const TaskList: React.FC = () => {
     }
   };
 
-  // Fetch data when component mounts
-  React.useEffect(() => {
-    handleRefresh();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const { data, refetch } = useQuery<TaskStatus[]>({
     queryKey: ['tasks', current, pageSize],
     queryFn: () => listTasks({
       limit: pageSize,
       offset: (current - 1) * pageSize
     }),
-    enabled: false, // Disable automatic fetching
+    enabled: true, // Enable automatic fetching
+    refetchOnWindowFocus: false, // Prevent automatic refetch on window focus
   });
 
   const handleViewFaq = (taskId: string) => {

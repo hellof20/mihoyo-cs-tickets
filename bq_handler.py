@@ -10,6 +10,7 @@ class BigQueryHandler:
             
             self.project_id = config['app']['project_id']
             self.dataset_id = config['bigquery']['dataset_id']
+            self.faq_table = config['bigquery']['faq_table_name']
             self.config_path = config_path
             print(f"BigQueryHandler initialized for project '{self.project_id}'.")
             
@@ -177,7 +178,7 @@ class BigQueryHandler:
         """
         query = f"""
         SELECT cluster_id, business, num_tickets, summarized
-        FROM `speedy-victory-336109.nap_tickets.issue_faq` 
+        FROM `{self.project_id}.{self.dataset_id}.{self.faq_table}` 
         WHERE task_id = '{task_id}'
         ORDER BY num_tickets DESC
         """
