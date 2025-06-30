@@ -21,7 +21,7 @@ const TaskList: React.FC = () => {
     }
   };
 
-  const { data, refetch } = useQuery<TaskStatus[]>({
+  const { data, refetch, isLoading } = useQuery<TaskStatus[]>({
     queryKey: ['tasks', current, pageSize],
     queryFn: () => listTasks({
       limit: pageSize,
@@ -119,7 +119,7 @@ const TaskList: React.FC = () => {
           <Button 
             icon={<ReloadOutlined />} 
             onClick={handleRefresh}
-            loading={refreshing}
+            loading={refreshing || isLoading}
           />
         </Tooltip>
       </Space>
@@ -128,7 +128,7 @@ const TaskList: React.FC = () => {
         columns={taskColumns}
         dataSource={data}
         rowKey="task_id"
-        loading={refreshing}
+        loading={refreshing || isLoading}
         pagination={{
           current,
           pageSize,
