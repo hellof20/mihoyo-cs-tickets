@@ -1,4 +1,4 @@
-# Mihoyo CS Tickets System
+# CS Tickets System
 
 A full-stack application for managing and analyzing customer service tickets for Mihoyo. The system provides automated ticket clustering, issue summarization, and FAQ generation capabilities.
 
